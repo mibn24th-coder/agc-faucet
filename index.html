@@ -29,7 +29,27 @@ alert("Please install MetaMask");
 }
 
 async function claimToken() {
-document.getElementById("status").innerText = "Claiming AGC...";
+
+if (!window.ethereum) {
+alert("Please install MetaMask");
+return;
+}
+
+const web3 = new Web3(window.ethereum);
+
+const accounts = await web3.eth.getAccounts();
+
+document.getElementById("status").innerText = "Sending AGC...";
+
+const contractAddress = "0x9bfaC367F4C025f1883511A36a51ed69c7Be08C9";
+
+await web3.eth.sendTransaction({
+from: accounts[0],
+to: contractAddress,
+value: 0
+});
+
+document.getElementById("status").innerText = "AGC Sent!";
 }
 
 </script>
