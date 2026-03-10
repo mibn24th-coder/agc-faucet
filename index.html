@@ -1,61 +1,45 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 <title>AGC Faucet</title>
-
 <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
 
 <style>
-
 body{
 font-family: Arial;
 background:#0f172a;
 color:white;
 text-align:center;
-padding-top:60px;
+padding-top:80px;
 }
 
 .container{
 background:#1e293b;
-width:420px;
+width:400px;
 margin:auto;
 padding:30px;
-border-radius:10px;
+border-radius:12px;
 }
 
 button{
-padding:10px 20px;
+padding:12px 20px;
 margin:10px;
-background:#22c55e;
 border:none;
 border-radius:8px;
+background:#22c55e;
 color:white;
-cursor:pointer;
 font-size:16px;
+cursor:pointer;
 }
 
 button:hover{
 background:#16a34a;
 }
 
-.wallet{
-margin-top:10px;
-font-size:14px;
+.info{
+margin-top:20px;
 }
-
-.balance{
-margin-top:10px;
-font-size:18px;
-}
-
-.status{
-margin-top:15px;
-color:#facc15;
-}
-
 </style>
-
 </head>
 
 <body>
@@ -63,109 +47,115 @@ color:#facc15;
 <div class="container">
 
 <h1>AGC Faucet</h1>
-
 <p>Claim 0.1 AGC every 24 hours</p>
 
 <button onclick="connectWallet()">Connect Wallet</button>
+<button onclick="claim()">Claim AGC</button>
 
-<button onclick="claimToken()">Claim AGC</button>
-
-<div class="wallet" id="wallet"></div>
-
-<div class="balance" id="balance">Balance: 0 AGC</div>
-
-<div class="status" id="status"></div>
+<div class="info">
+<p id="wallet"></p>
+<p id="balance"></p>
+<p id="status"></p>
+</div>
 
 </div>
 
 <script>
 
 let web3;
+let account;
 
-const faucetAddress="PASTE_FAUCET_CONTRACT_HERE";
+const tokenAddress = "0x9bfaC367F4C025f1883511A36a51ed69c7Be08C9";
 
-const faucetABI=[
-{
-"inputs":[],
-"name":"claim",
-"outputs":[],
-"stateMutability":"nonpayable",
-"type":"function"
-}
-];
-
-const tokenAddress="0x9bfaC367F4C025f1883511A36a51ed69c7Be08C9";
-
-const tokenABI=[
+const abi = [
 {
 "constant":true,
-"inputs":[{"name":"_owner","type":"address"}],
+"inputs":[{"name":"owner","type":"address"}],
 "name":"balanceOf",
-"outputs":[{"name":"balance","type":"uint256"}],
+"outputs":[{"name":"","type":"uint256"}],
+"type":"function"
+},
+{
+"constant":false,
+"inputs":[
+{"name":"to","type":"address"},
+{"name":"value","type":"uint256"}
+],
+"name":"transfer",
+"outputs":[{"name":"","type":"bool"}],
 "type":"function"
 }
 ];
+
+let contract;
 
 async function connectWallet(){
 
 if(window.ethereum){
 
-web3=new Web3(window.ethereum);
+web3 = new Web3(window.ethereum);
 
-const accounts=await ethereum.request({
-method:'eth_requestAccounts'
-});
+await ethereum.request({method:'eth_requestAccounts'});
 
-document.getElementById("wallet").innerText="Wallet: "+accounts[0];
+let accounts = await web3.eth.getAccounts();
 
-getBalance();
+account = accounts[0];
 
-}else{
+document.getElementById("wallet").innerHTML = "Wallet: " + account;
 
-alert("Please install MetaMask");
-
-}
-
-}
-
-async function claimToken(){
-
-const accounts=await web3.eth.getAccounts();
-
-const contract=new web3.eth.Contract(
-faucetABI,
-faucetAddress
-);
-
-document.getElementById("status").innerText="Claiming AGC...";
-
-await contract.methods.claim().send({
-from:accounts[0]
-});
-
-document.getElementById("status").innerText="Claim success!";
+contract = new web3.eth.Contract(abi,tokenAddress);
 
 getBalance();
+
+}
 
 }
 
 async function getBalance(){
 
-const accounts=await web3.eth.getAccounts();
+let bal = await contract.methods.balanceOf(account).call();
 
-const token=new web3.eth.Contract(
-tokenABI,
-tokenAddress
-);
+bal = web3.utils.fromWei(bal);
 
-const balance=await token.methods
-.balanceOf(accounts[0])
-.call();
+document.getElementById("balance").innerHTML = "AGC Balance: "+bal;
 
-const agc=web3.utils.fromWei(balance);
+}
 
-document.getElementById("balance").innerText=
-"Balance: "+agc+" AGC";
+function canClaim(){
+
+let last = localStorage.getItem("lastClaim");
+
+if(!last) return true;
+
+let now = Date.now();
+
+let diff = now - last;
+
+return diff > 86400000;
+
+}
+
+async function claim(){
+
+if(!canClaim()){
+
+document.getElementById("status").innerHTML="Come back after 24 hours";
+
+return;
+
+}
+
+document.getElementById("status").innerHTML="Processing...";
+
+let amount = web3.utils.toWei("0.1");
+
+await contract.methods.transfer(account,amount).send({from:account});
+
+localStorage.setItem("lastClaim",Date.now());
+
+document.getElementById("status").innerHTML="Success! 0.1 AGC received";
+
+getBalance();
 
 }
 
