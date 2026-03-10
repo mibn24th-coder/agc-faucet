@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 <title>AGC Faucet</title>
 </head>
@@ -10,10 +11,13 @@
 <p>Welcome to AGC Testnet Faucet</p>
 
 <button onclick="connectWallet()">Connect Wallet</button>
+<button onclick="claimToken()">Claim AGC</button>
 
 <p id="wallet"></p>
+<p id="status"></p>
 
 <script>
+
 async function connectWallet() {
 if (window.ethereum) {
 const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
@@ -22,6 +26,11 @@ document.getElementById("wallet").innerText = "Wallet: " + accounts[0];
 alert("Please install MetaMask");
 }
 }
+
+async function claimToken() {
+document.getElementById("status").innerText = "Claiming AGC...";
+}
+
 </script>
 
 </body>
