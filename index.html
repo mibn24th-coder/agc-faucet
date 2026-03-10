@@ -3,53 +3,170 @@
 
 <head>
 <title>AGC Faucet</title>
+
 <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+
+<style>
+
+body{
+font-family: Arial;
+background:#0f172a;
+color:white;
+text-align:center;
+padding-top:60px;
+}
+
+.container{
+background:#1e293b;
+width:420px;
+margin:auto;
+padding:30px;
+border-radius:10px;
+}
+
+button{
+padding:10px 20px;
+margin:10px;
+background:#22c55e;
+border:none;
+border-radius:8px;
+color:white;
+cursor:pointer;
+font-size:16px;
+}
+
+button:hover{
+background:#16a34a;
+}
+
+.wallet{
+margin-top:10px;
+font-size:14px;
+}
+
+.balance{
+margin-top:10px;
+font-size:18px;
+}
+
+.status{
+margin-top:15px;
+color:#facc15;
+}
+
+</style>
+
 </head>
 
 <body>
 
+<div class="container">
+
 <h1>AGC Faucet</h1>
-<p>Welcome to AGC Testnet Faucet</p>
+
+<p>Claim 0.1 AGC every 24 hours</p>
 
 <button onclick="connectWallet()">Connect Wallet</button>
+
 <button onclick="claimToken()">Claim AGC</button>
 
-<p id="wallet"></p>
-<p id="status"></p>
+<div class="wallet" id="wallet"></div>
+
+<div class="balance" id="balance">Balance: 0 AGC</div>
+
+<div class="status" id="status"></div>
+
+</div>
 
 <script>
 
-async function connectWallet() {
-if (window.ethereum) {
-const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-document.getElementById("wallet").innerText = "Wallet: " + accounts[0];
-} else {
-alert("Please install MetaMask");
+let web3;
+
+const faucetAddress="PASTE_FAUCET_CONTRACT_HERE";
+
+const faucetABI=[
+{
+"inputs":[],
+"name":"claim",
+"outputs":[],
+"stateMutability":"nonpayable",
+"type":"function"
 }
+];
+
+const tokenAddress="0x9bfaC367F4C025f1883511A36a51ed69c7Be08C9";
+
+const tokenABI=[
+{
+"constant":true,
+"inputs":[{"name":"_owner","type":"address"}],
+"name":"balanceOf",
+"outputs":[{"name":"balance","type":"uint256"}],
+"type":"function"
 }
+];
 
-async function claimToken() {
+async function connectWallet(){
 
-if (!window.ethereum) {
-alert("Please install MetaMask");
-return;
-}
+if(window.ethereum){
 
-const web3 = new Web3(window.ethereum);
+web3=new Web3(window.ethereum);
 
-const accounts = await web3.eth.getAccounts();
-
-document.getElementById("status").innerText = "Sending AGC...";
-
-const contractAddress = "0x9bfaC367F4C025f1883511A36a51ed69c7Be08C9";
-
-await web3.eth.sendTransaction({
-from: accounts[0],
-to: contractAddress,
-value: 0
+const accounts=await ethereum.request({
+method:'eth_requestAccounts'
 });
 
-document.getElementById("status").innerText = "AGC Sent!";
+document.getElementById("wallet").innerText="Wallet: "+accounts[0];
+
+getBalance();
+
+}else{
+
+alert("Please install MetaMask");
+
+}
+
+}
+
+async function claimToken(){
+
+const accounts=await web3.eth.getAccounts();
+
+const contract=new web3.eth.Contract(
+faucetABI,
+faucetAddress
+);
+
+document.getElementById("status").innerText="Claiming AGC...";
+
+await contract.methods.claim().send({
+from:accounts[0]
+});
+
+document.getElementById("status").innerText="Claim success!";
+
+getBalance();
+
+}
+
+async function getBalance(){
+
+const accounts=await web3.eth.getAccounts();
+
+const token=new web3.eth.Contract(
+tokenABI,
+tokenAddress
+);
+
+const balance=await token.methods
+.balanceOf(accounts[0])
+.call();
+
+const agc=web3.utils.fromWei(balance);
+
+document.getElementById("balance").innerText=
+"Balance: "+agc+" AGC";
+
 }
 
 </script>
