@@ -5,8 +5,24 @@
 </head>
 
 <body>
+
 <h1>AGC Faucet</h1>
 <p>Welcome to AGC Testnet Faucet</p>
-</body>
 
+<button onclick="connectWallet()">Connect Wallet</button>
+
+<p id="wallet"></p>
+
+<script>
+async function connectWallet() {
+if (window.ethereum) {
+const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+document.getElementById("wallet").innerText = "Wallet: " + accounts[0];
+} else {
+alert("Please install MetaMask");
+}
+}
+</script>
+
+</body>
 </html>
