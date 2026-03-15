@@ -2,9 +2,11 @@
 <html>
 <head>
 <title>AGC Faucet</title>
+
 <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
 
 <style>
+
 body{
 font-family: Arial;
 background:#0f172a;
@@ -36,10 +38,8 @@ button:hover{
 background:#16a34a;
 }
 
-.info{
-margin-top:20px;
-}
 </style>
+
 </head>
 
 <body>
@@ -52,11 +52,8 @@ margin-top:20px;
 <button onclick="connectWallet()">Connect Wallet</button>
 <button onclick="claim()">Claim AGC</button>
 
-<div class="info">
 <p id="wallet"></p>
-<p id="balance"></p>
 <p id="status"></p>
-</div>
 
 </div>
 
@@ -65,29 +62,19 @@ margin-top:20px;
 let web3;
 let account;
 
-const tokenAddress = "0x9bfaC367F4C025f1883511A36a51ed69c7Be08C9";
+const faucetAddress = "PASTE_FAUCET_CONTRACT_ADDRESS";
 
-const abi = [
+const faucetABI = [
 {
-"constant":true,
-"inputs":[{"name":"owner","type":"address"}],
-"name":"balanceOf",
-"outputs":[{"name":"","type":"uint256"}],
-"type":"function"
-},
-{
-"constant":false,
-"inputs":[
-{"name":"to","type":"address"},
-{"name":"value","type":"uint256"}
-],
-"name":"transfer",
-"outputs":[{"name":"","type":"bool"}],
+"inputs":[],
+"name":"claim",
+"outputs":[],
+"stateMutability":"nonpayable",
 "type":"function"
 }
 ];
 
-let contract;
+let faucet;
 
 async function connectWallet(){
 
@@ -101,61 +88,35 @@ let accounts = await web3.eth.getAccounts();
 
 account = accounts[0];
 
-document.getElementById("wallet").innerHTML = "Wallet: " + account;
+document.getElementById("wallet").innerHTML =
+"Wallet: " + account;
 
-contract = new web3.eth.Contract(abi,tokenAddress);
-
-getBalance();
-
-}
-
-}
-
-async function getBalance(){
-
-let bal = await contract.methods.balanceOf(account).call();
-
-bal = web3.utils.fromWei(bal);
-
-document.getElementById("balance").innerHTML = "AGC Balance: "+bal;
+faucet = new web3.eth.Contract(
+faucetABI,
+faucetAddress
+);
 
 }
-
-function canClaim(){
-
-let last = localStorage.getItem("lastClaim");
-
-if(!last) return true;
-
-let now = Date.now();
-
-let diff = now - last;
-
-return diff > 86400000;
 
 }
 
 async function claim(){
 
-if(!canClaim()){
-
-document.getElementById("status").innerHTML="Come back after 24 hours";
-
-return;
-
-}
-
 document.getElementById("status").innerHTML="Processing...";
 
-let amount = web3.utils.toWei("0.1");
+try{
 
-await contract.methods.transfer(account,amount).send({from:account});
+await faucet.methods.claim().send({from:account});
 
-localStorage.setItem("lastClaim",Date.now());
+document.getElementById("status").innerHTML =
+"Success! 0.1 AGC received";
 
-document.getElementById("status").innerHTML="Success! 0.1 AGC received";
+}catch(e){
 
-getBalance();
+document.getElementById("status").innerHTML =
+"Error or wait 24 hours";
+
+}
 
 }
 
